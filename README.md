@@ -2,8 +2,6 @@
 
 ## 🛠️ Languages & Tech Stack
 
-This project is built from scratch as a modern full-stack web application leveraging professional and fast technologies.
-
 ### Frontend
 *   **Language:** TypeScript (v5+) - Type-safe, solid definitions for all data structures.
 *   **Core UI Library:** React (v19) - Functional components with custom hooks.
