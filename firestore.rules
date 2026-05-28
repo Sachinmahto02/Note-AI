@@ -1,0 +1,111 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- Entity Validations ---
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['name', 'email', 'createdAt']) &&
+             data.keys().size() <= 12 &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.email is string && data.email.size() <= 200 &&
+             ( !('avatarUrl' in data) || data.avatarUrl is string ) &&
+             ( !('customAvatar' in data) || data.customAvatar is string ) &&
+             ( !('bio' in data) || data.bio is string ) &&
+             ( !('dob' in data) || data.dob is string ) &&
+             data.createdAt is timestamp;
+    }
+
+    function isValidNote(data) {
+      return data.keys().hasAll(['userId', 'title', 'content', 'createdAt', 'updatedAt']) &&
+             data.keys().size() <= 18 &&
+             data.userId is string &&
+             data.title is string && data.title.size() <= 500 &&
+             data.content is string && data.content.size() <= 1000000 &&
+             ( !('category' in data) || data.category is string ) &&
+             ( !('mediaUrl' in data) || data.mediaUrl is string ) &&
+             ( !('mediaType' in data) || data.mediaType is string ) &&
+             ( !('mediaAssets' in data) || data.mediaAssets is list ) &&
+             ( !('deletedAt' in data) || data.deletedAt is timestamp ) &&
+             data.createdAt is timestamp &&
+             data.updatedAt is timestamp;
+    }
+
+    function isValidJournalTask(data) {
+      return data.keys().hasAll(['userId', 'text', 'completed', 'createdAt']) &&
+             data.keys().size() <= 12 &&
+             data.userId is string &&
+             data.text is string && data.text.size() <= 20000 &&
+             data.completed is bool &&
+             ( !('type' in data) || (data.type is string && data.type == 'reflection') ) &&
+             ( !('category' in data) || (data.category is string && data.category in ['Study', 'Health', 'Work', 'Personal', 'Other', 'Reflection']) ) &&
+             ( !('priority' in data) || (data.priority is string && data.priority in ['Low', 'Medium', 'High']) ) &&
+             ( !('rating' in data) || (data.rating is number && data.rating >= 0 && data.rating <= 5) ) &&
+             ( !('mediaAssets' in data) || data.mediaAssets is list ) &&
+             data.createdAt is timestamp;
+    }
+
+    // --- Collections ---
+
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+    }
+
+    match /users/{userId}/notes/{noteId} {
+      allow list: if isOwner(userId);
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidNote(incoming()) && incoming().userId == request.auth.uid;
+      allow update: if isOwner(userId) && isValidNote(incoming()) && 
+                    incoming().userId == existing().userId &&
+                    incoming().createdAt == existing().createdAt &&
+                    incoming().updatedAt == request.time;
+      allow delete: if isOwner(userId);
+    }
+
+    match /users/{userId}/trash/{noteId} {
+      allow list: if isOwner(userId);
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidNote(incoming()) && incoming().userId == request.auth.uid;
+      allow update: if isOwner(userId); // Allow updating for restore or final cleanup if needed
+      allow delete: if isOwner(userId);
+    }
+
+    match /users/{userId}/journal/{taskId} {
+      allow list: if isOwner(userId);
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidJournalTask(incoming()) && incoming().userId == request.auth.uid;
+      allow update: if isOwner(userId) && isValidJournalTask(incoming()) && 
+                    incoming().userId == existing().userId &&
+                    incoming().createdAt == existing().createdAt;
+      allow delete: if isOwner(userId);
+    }
+  }
+}

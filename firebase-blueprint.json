@@ -1,0 +1,91 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User account information",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "avatarUrl": { "type": "string" },
+        "customAvatar": { "type": "string", "description": "Base64 custom avatar" },
+        "bio": { "type": "string", "description": "Academic bio or description" },
+        "dob": { "type": "string", "description": "Date of birth" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "email", "createdAt"]
+    },
+    "Note": {
+      "title": "Note",
+      "description": "A user's note with optional media",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "previewSnippet": { "type": "string" },
+        "type": { "type": "string", "enum": ["text", "image", "pdf"] },
+        "mediaUrl": { "type": "string" },
+        "mediaType": { "type": "string" },
+        "mediaAssets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "url": { "type": "string" },
+              "type": { "type": "string" }
+            }
+          }
+        },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "content", "createdAt", "updatedAt"]
+    },
+    "JournalTask": {
+      "title": "Journal Task",
+      "description": "A daily routine or task with rating, category and priority",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "text": { "type": "string" },
+        "completed": { "type": "boolean" },
+        "type": { "type": "string", "description": "Type of entry (task or reflection)" },
+        "category": { "type": "string", "enum": ["Study", "Health", "Work", "Personal", "Other"] },
+        "priority": { "type": "string", "enum": ["Low", "Medium", "High"] },
+        "rating": { "type": "number", "description": "1-5 star rating" },
+        "mediaAssets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "url": { "type": "string" },
+              "type": { "type": "string" },
+              "name": { "type": "string" }
+            }
+          }
+        },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "text", "completed", "createdAt"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "users/{userId}/notes/{noteId}": {
+      "schema": "Note",
+      "description": "User notes"
+    },
+    "users/{userId}/trash/{noteId}": {
+      "schema": "Note",
+      "description": "Recently deleted notes"
+    },
+    "users/{userId}/journal/{taskId}": {
+      "schema": "JournalTask",
+      "description": "Daily tasks and routines"
+    }
+  }
+}

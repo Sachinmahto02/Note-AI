@@ -1,0 +1,6 @@
+{
+  "name": "My Journal",
+  "description": "A personal AI-powered journal for tracking thoughts, academic performance, and daily routines.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["note_taking", "ai_integration", "journaling"]
+}
